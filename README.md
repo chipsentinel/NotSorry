@@ -110,6 +110,3 @@ The application is not a weather forecast, but rather a tool based on historical
 
 ---
 
-## 🔹 License
-
-This project is under the MIT license.
