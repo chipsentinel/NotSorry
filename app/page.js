@@ -15,26 +15,27 @@ export default function Home() {
     setSelectedLocation(location);
     setView("loading");
     // URL de la NASA POWER API para climatología (temperatura 2m en Madrid)
-const url = "https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=T2M&community=AG&longitude=-3.7038&latitude=40.4168&format=JSON";
+    const url =
+      "https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=T2M&community=AG&longitude=-3.7038&latitude=40.4168&format=JSON";
 
-fetch(url)
-  .then(response => {
-    if (!response.ok) {
-      throw new Error("Error en la respuesta de la NASA POWER API");
-    }
-    return response.json();
-  })
-  .then(data => {
-    // Los datos vienen en data.properties.parameter.T2M
-    const temps = data.properties.parameter.T2M;
-    console.log("Climatología de temperatura media (°C) en Madrid:");
-    Object.entries(temps).forEach(([mes, valor]) => {
-      console.log(`${mes}: ${valor.toFixed(2)} °C`);
-    });
-  })
-  .catch(error => {
-    console.error("Hubo un problema con la API:", error);
-  });
+    fetch(url)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Error en la respuesta de la NASA POWER API");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // Los datos vienen en data.properties.parameter.T2M
+        const temps = data.properties.parameter.T2M;
+        console.log("Climatología de temperatura media (°C) en Madrid:");
+        Object.entries(temps).forEach(([mes, valor]) => {
+          console.log(`${mes}: ${valor.toFixed(2)} °C`);
+        });
+      })
+      .catch((error) => {
+        console.error("Hubo un problema con la API:", error);
+      });
 
     // Simular fetch de la api
     setTimeout(() => {
@@ -87,15 +88,9 @@ fetch(url)
               NOTSORRY WEATHER
             </h1>
             <p className="font-mono text-[10px] text-muted-foreground">
-              NASA DATA
+              NASA SPACEAPPS 2025
             </p>
           </div>
-        </div>
-
-        <div className="rounded-full border border-border bg-card/50 px-4 py-1.5 backdrop-blur-sm">
-          <p className="font-mono text-xs text-muted-foreground">
-            NASA SPACE APPS 2025
-          </p>
         </div>
       </header>
 

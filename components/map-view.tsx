@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Cloud, Droplets, Wind, Eye, Calendar } from "lucide-react";
+import {
+  ArrowLeft,
+  Cloud,
+  Droplets,
+  Wind,
+  Eye,
+  Calendar,
+  CloudRain,
+  CloudSnow,
+  Sun,
+  CloudDrizzle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search-bar";
 
@@ -18,6 +29,16 @@ interface MapViewProps {
     lon: number;
   }) => void;
 }
+
+const mockForecast = [
+  { day: "Mon", icon: Sun, temp: "24°", condition: "Sunny" },
+  { day: "Tue", icon: Cloud, temp: "22°", condition: "Cloudy" },
+  { day: "Wed", icon: CloudRain, temp: "19°", condition: "Rainy" },
+  { day: "Thu", icon: CloudDrizzle, temp: "20°", condition: "Drizzle" },
+  { day: "Fri", icon: Sun, temp: "25°", condition: "Sunny" },
+  { day: "Sat", icon: Cloud, temp: "23°", condition: "Cloudy" },
+  { day: "Sun", icon: CloudSnow, temp: "18°", condition: "Snow" },
+];
 
 export function MapView({ location, onBack, onLocationUpdate }: MapViewProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -81,7 +102,6 @@ export function MapView({ location, onBack, onLocationUpdate }: MapViewProps) {
       }
     ).addTo(mapInstance);
 
-    // Custom marker with glow effect
     const customIcon = L.divIcon({
       className: "custom-leaflet-marker",
       html: `
@@ -123,7 +143,6 @@ export function MapView({ location, onBack, onLocationUpdate }: MapViewProps) {
       });
       marker.current.setLatLng([newLocation.lat, newLocation.lon]);
     }
-    // Update parent component state
     onLocationUpdate(newLocation);
   };
 
@@ -148,6 +167,39 @@ export function MapView({ location, onBack, onLocationUpdate }: MapViewProps) {
             </div>
           </div>
         )}
+
+        <div className="pointer-events-auto absolute bottom-4 left-0 z-10 px-4 md:left-96 md:px-8">
+          <div className="relative rounded-xl border border-blue-500/30 bg-slate-900/80 p-4 backdrop-blur-2xl shadow-2xl">
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-950/60 via-slate-900/50 to-transparent" />
+            <div className="relative">
+              <h3 className="mb-3 font-mono text-[10px] font-semibold uppercase tracking-wider text-blue-300/70">
+                7-Day Forecast
+              </h3>
+              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-blue-500/30">
+                {mockForecast.map((day, index) => {
+                  const Icon = day.icon;
+                  return (
+                    <div
+                      key={index}
+                      className="flex min-w-[90px] flex-col items-center gap-2 rounded-lg border border-blue-500/20 bg-blue-950/40 p-3 backdrop-blur-sm transition-all hover:scale-105 hover:border-blue-400/40 hover:bg-blue-900/50"
+                    >
+                      <span className="font-mono text-xs font-semibold text-blue-200">
+                        {day.day}
+                      </span>
+                      <Icon className="h-6 w-6 text-blue-400" />
+                      <span className="font-mono text-base font-bold text-blue-50">
+                        {day.temp}
+                      </span>
+                      <span className="font-mono text-[10px] text-blue-300/70">
+                        {day.condition}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <aside className="relative z-20 flex w-full flex-col md:w-96 animate-in slide-in-from-left duration-700">
@@ -158,13 +210,13 @@ export function MapView({ location, onBack, onLocationUpdate }: MapViewProps) {
         <div className="relative z-10 flex h-full flex-col border-r border-blue-500/20 shadow-2xl">
           <div className="border-b border-blue-500/20 p-6 space-y-4">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={onBack}
-              className="-ml-2 text-blue-200 hover:text-blue-100 transition-all hover:translate-x-[-4px]"
+              className="-ml-2 text-blue-200 hover:text-blue-700 transition-all hover:translate-x-[-4px] bg-white-200"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to search
+              Back to home
             </Button>
 
             <div className="flex items-center gap-3">
@@ -215,7 +267,7 @@ export function MapView({ location, onBack, onLocationUpdate }: MapViewProps) {
             </p>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-6 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-blue-500/30">
             <div className="space-y-6">
               <div>
                 <h3 className="mb-4 font-mono text-xs font-semibold uppercase tracking-wider text-blue-300/70">
