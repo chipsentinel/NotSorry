@@ -11,36 +11,37 @@ export default function Home() {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [isInputActive, setIsInputActive] = useState(false);
 
-  const handleLocationSelect = (location) => {
-    setSelectedLocation(location);
-    setView("loading");
-    // URL de la NASA POWER API para climatología (temperatura 2m en Madrid)
-const url = "https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=T2M&community=AG&longitude=-3.7038&latitude=40.4168&format=JSON";
+const handleLocationSelect = (location) => {
+  setSelectedLocation(location);
+  setView("loading");
 
-fetch(url)
-  .then(response => {
-    if (!response.ok) {
-      throw new Error("Error en la respuesta de la NASA POWER API");
-    }
-    return response.json();
-  })
-  .then(data => {
-    // Los datos vienen en data.properties.parameter.T2M
-    const temps = data.properties.parameter.T2M;
-    console.log("Climatología de temperatura media (°C) en Madrid:");
-    Object.entries(temps).forEach(([mes, valor]) => {
-      console.log(`${mes}: ${valor.toFixed(2)} °C`);
+  // 🔑 aquí desestructuramos exactamente como lo devuelve el SearchBar
+  const { lat, lon, name } = location;
+
+  const url = `https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=T2M&community=AG&longitude=${lon}&latitude=${lat}&format=JSON`;
+
+  fetch(url)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Error en la respuesta de la NASA POWER API");
+      }
+      return response.json();
+    })
+    .then((data) => {
+      const temps = data.properties.parameter.T2M;
+      console.log(`Climatología de temperatura media (°C) en ${name}:`);
+      Object.entries(temps).forEach(([mes, valor]) => {
+        console.log(`${mes}: ${valor.toFixed(2)} °C`);
+      });
+    })
+    .catch((error) => {
+      console.error("Hubo un problema con la API:", error);
     });
-  })
-  .catch(error => {
-    console.error("Hubo un problema con la API:", error);
-  });
 
-    // Simular fetch de la api
-    setTimeout(() => {
-      setView("map");
-    }, 2000);
-  };
+  setTimeout(() => {
+    setView("map");
+  }, 2000);
+};
 
   const handleBackToSearch = () => {
     setView("search");
