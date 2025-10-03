@@ -37,7 +37,6 @@ export default function Home() {
         console.error("Hubo un problema con la API:", error);
       });
 
-    // Simular fetch de la api
     setTimeout(() => {
       setView("map");
     }, 2000);
