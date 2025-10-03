@@ -221,9 +221,13 @@ export function MapView({ location, onBack, onLocationUpdate }: MapViewProps) {
 
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20 border border-blue-400/30">
-                <span className="font-mono text-lg font-bold text-blue-300">
-                  NW
-                </span>
+                  <span className="flex items-center">
+                    <img 
+                      src="/logo.png" 
+                      alt="NotSorry Weather logo" 
+                      className="w-8 h-8"
+                    />
+                  </span>
               </div>
               <div>
                 <h1 className="font-mono text-sm font-bold tracking-tight text-blue-100">
