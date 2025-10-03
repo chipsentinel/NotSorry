@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Cloud, Droplets, Wind, Eye } from "lucide-react";
+import { ArrowLeft, Cloud, Droplets, Wind, Eye, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search-bar";
 
@@ -26,6 +26,10 @@ export function MapView({ location, onBack, onLocationUpdate }: MapViewProps) {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const initialLocation = useRef(location);
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -139,7 +143,7 @@ export function MapView({ location, onBack, onLocationUpdate }: MapViewProps) {
             <div className="text-center">
               <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-accent/20 border-t-accent" />
               <p className="font-mono text-sm text-muted-foreground">
-                {!scriptLoaded ? "Cargando mapa..." : "Mostrando mapa..."}
+                {!scriptLoaded ? "Loading map..." : "Initializing..."}
               </p>
             </div>
           </div>
@@ -157,10 +161,10 @@ export function MapView({ location, onBack, onLocationUpdate }: MapViewProps) {
               variant="ghost"
               size="sm"
               onClick={onBack}
-              className="-ml-2 text-blue-200 hover:text-blue-800 transition-all hover:translate-x-[-4px]"
+              className="-ml-2 text-blue-200 hover:text-blue-100 transition-all hover:translate-x-[-4px]"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Volver al inicio
+              Back to search
             </Button>
 
             <div className="flex items-center gap-3">
@@ -184,6 +188,21 @@ export function MapView({ location, onBack, onLocationUpdate }: MapViewProps) {
                 onLocationSelect={handleLocationUpdate}
                 isInMapView={true}
               />
+            </div>
+
+            <div className="pt-2">
+              <label className="mb-2 block font-mono text-xs font-semibold uppercase tracking-wider text-blue-300/70">
+                Select Date
+              </label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-400" />
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full rounded-lg border border-blue-500/30 bg-blue-950/40 py-2.5 pl-10 pr-4 font-mono text-sm text-blue-100 backdrop-blur-sm transition-all placeholder:text-blue-400/50 hover:border-blue-400/50 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                />
+              </div>
             </div>
           </div>
 
