@@ -14,6 +14,27 @@ export default function Home() {
   const handleLocationSelect = (location) => {
     setSelectedLocation(location);
     setView("loading");
+    // URL de la NASA POWER API para climatología (temperatura 2m en Madrid)
+const url = "https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=T2M&community=AG&longitude=-3.7038&latitude=40.4168&format=JSON";
+
+fetch(url)
+  .then(response => {
+    if (!response.ok) {
+      throw new Error("Error en la respuesta de la NASA POWER API");
+    }
+    return response.json();
+  })
+  .then(data => {
+    // Los datos vienen en data.properties.parameter.T2M
+    const temps = data.properties.parameter.T2M;
+    console.log("Climatología de temperatura media (°C) en Madrid:");
+    Object.entries(temps).forEach(([mes, valor]) => {
+      console.log(`${mes}: ${valor.toFixed(2)} °C`);
+    });
+  })
+  .catch(error => {
+    console.error("Hubo un problema con la API:", error);
+  });
 
     // Simular fetch de la api
     setTimeout(() => {
