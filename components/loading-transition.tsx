@@ -31,10 +31,10 @@ export function LoadingTransition({ locationName }: LoadingTransitionProps) {
         </div>
 
         <h2 className="mb-2 font-mono text-2xl font-bold text-foreground">
-          CARGANDO INFORMACIÓN
+          LOADING INFORMATION
         </h2>
         <p className="font-sans text-lg text-muted-foreground">
-          Cargando datos meteorológicos de {locationName}
+          Loading weather data for {locationName}
         </p>
 
         <div className="mt-6 flex justify-center gap-2">

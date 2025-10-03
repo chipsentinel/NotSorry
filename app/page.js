@@ -118,7 +118,7 @@ fetch(url)
               Future weather on time
             </h2>
             <p className="text-pretty text-lg text-muted-foreground md:text-xl">
-              Predicciones a tiempo real con datos de la NASA
+              Real-time predictions using NASA data
             </p>
           </div>
 
@@ -138,12 +138,12 @@ fetch(url)
           >
             <div className="rounded-full border border-border bg-card/30 px-4 py-2 backdrop-blur-sm">
               <p className="font-mono text-xs text-muted-foreground">
-                ESTADÍSTICAS EN TIEMPO REAL
+                REAL-TIME STATISTICS
               </p>
             </div>
             <div className="rounded-full border border-border bg-card/30 px-4 py-2 backdrop-blur-sm">
               <p className="font-mono text-xs text-muted-foreground">
-                INFORMACIÓN SENCILLA
+                SIMPLE INFORMATION
               </p>
             </div>
             <div className="rounded-full border border-border bg-card/30 px-4 py-2 backdrop-blur-sm">

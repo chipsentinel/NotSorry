@@ -186,7 +186,7 @@ export function SearchBar({
             }}
             onKeyDown={handleKeyDown}
             onFocus={() => setShowSuggestions(suggestions.length > 0)}
-            placeholder="Introduce una ubicación o coordenadas..."
+            placeholder="Enter a location or coordinates..."
             className="flex-1 bg-transparent py-5 pr-4 font-sans text-base text-foreground placeholder:text-muted-foreground focus:outline-none md:text-lg"
           />
 
@@ -208,7 +208,7 @@ export function SearchBar({
             disabled={!location}
             className="mr-2 rounded-xl bg-accent px-6 py-5 font-mono text-sm font-semibold text-background transition-all hover:bg-accent/90 hover:shadow-lg hover:shadow-accent/30 disabled:opacity-50"
           >
-            BUSCAR
+            SEARCH
           </Button>
         </div>
 
