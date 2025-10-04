@@ -522,7 +522,7 @@ export function MapView({
 
             <div className="pt-2">
               <SearchBar
-                onLocationSelect={handleLocationUpdateInternal}
+                handleLocationSelect={handleLocationUpdateInternal}
                 isInMapView={true}
               />
             </div>
