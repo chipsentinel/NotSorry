@@ -80,7 +80,7 @@ export default function Home() {
         }`}
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/20 backdrop-blur-sm">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-transparent">
                   <span className="flex items-center">
                     <img 
                       src="/logo.png" 
