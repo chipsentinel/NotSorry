@@ -442,7 +442,7 @@ export default function Home() {
               <img
                 src="/logo.png"
                 alt="NotSorry Weather logo"
-                className="w-8 h-8"
+                className="w-10 h-10"
               />
             </span>
           </div>
