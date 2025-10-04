@@ -10,7 +10,7 @@ import {
   CloudSnow,
   Sun,
   CloudDrizzle,
-  MapIcon,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search-bar";
@@ -122,6 +122,10 @@ export function MapView({
   conversation,
 }: MapViewProps) {
   const [currentSelectedDate, setCurrentSelectedDate] = useState(
+    selectedDate || new Date().toISOString().split("T")[0]
+  );
+
+  const [tempDate, setTempDate] = useState(
     selectedDate || new Date().toISOString().split("T")[0]
   );
 
@@ -252,9 +256,9 @@ export function MapView({
     onLocationUpdate(newLocation, currentSelectedDate);
   };
 
-  const handleDateChange = (newDate: string) => {
-    setCurrentSelectedDate(newDate);
-    onLocationUpdate(location, newDate);
+  const handleDateSearch = () => {
+    setCurrentSelectedDate(tempDate);
+    onLocationUpdate(location, tempDate);
   };
 
   useEffect(() => {
@@ -531,14 +535,22 @@ export function MapView({
               <label className="mb-2 block font-mono text-xs font-semibold uppercase tracking-wider text-blue-300/70">
                 Select Date
               </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-400" />
-                <input
-                  type="date"
-                  value={currentSelectedDate}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                  className="w-full rounded-lg border border-blue-500/30 bg-blue-950/40 py-2.5 pl-10 pr-4 font-mono text-sm text-blue-100 backdrop-blur-sm transition-all placeholder:text-blue-400/50 hover:border-blue-400/50 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-blue-400" />
+                  <input
+                    type="date"
+                    value={tempDate}
+                    onChange={(e) => setTempDate(e.target.value)}
+                    className="w-full rounded-lg border border-blue-500/30 bg-blue-950/40 py-2.5 pl-10 pr-4 font-mono text-sm text-blue-100 backdrop-blur-sm transition-all placeholder:text-blue-400/50 hover:border-blue-400/50 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  />
+                </div>
+                <Button
+                  onClick={handleDateSearch}
+                  className="rounded-lg bg-blue-600 px-4 py-2.5 text-blue-50 transition-all hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
               </div>
               <p className="mt-2 font-mono text-[10px] text-blue-300/70">
                 {dateType === "past" && "Showing historical data for this date"}

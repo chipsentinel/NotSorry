@@ -283,21 +283,9 @@ export default function Home() {
         setForecastData(null);
         // Send context to the persistent AI assistant
         try {
-          sendContext?.({
-            location: { name, lat, lon },
-            date: targetDateStr,
-            mode: "past",
-            singleDayData,
-            prompt: `El ${targetDateStr} en ${name} la temperatura fue de ${
-              singleDayData.temperature !== null
-                ? singleDayData.temperature + "°C"
-                : "dato no disponible"
-            } y la precipitación fue de ${
-              singleDayData.precipitation !== null
-                ? singleDayData.precipitation + "mm"
-                : "dato no disponible"
-            }. Si el usuario te ha dicho que busques sobre esta ubicación debes hablarle sobre estas estadísticas.`,
-          });
+          sendContext?.(
+            `El usuario seleccionó ${name} (${lat}, ${lon}) para la fecha ${targetDateStr}. Datos del día: Temperatura ${singleDayData.temperature}°C, Precipitación ${singleDayData.precipitation}mm.`
+          );
         } catch (e) {
           console.warn("No se pudo enviar contexto al asistente:", e);
         }

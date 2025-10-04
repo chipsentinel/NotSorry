@@ -345,7 +345,7 @@ export function AIAssistant({ handleLocationSelect, externalContext = null }) {
       // IMPORTANTE: Reemplaza 'YOUR_AGENT_ID' con tu Agent ID real
       // O implementa el flujo de autenticación con signedUrl/conversationToken
       await conversation.startSession({
-        agentId: "agent_4801k6q79qz6epbryh4gtwk44fpx", // <-- Cambia esto por tu Agent ID
+        agentId: "agent_6601k6qbkhh3fevvqvwqj1d5txky", // <-- Cambia esto por tu Agent ID
         connectionType: "webrtc", // o "websocket"
       });
 
