@@ -11,32 +11,54 @@ export default function Home() {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [isInputActive, setIsInputActive] = useState(false);
 
-  const handleLocationSelect = (location) => {
-    setSelectedLocation(location);
-    setView("loading");
-    // URL de la NASA POWER API para climatología (temperatura 2m en Madrid)
-    const url =
-      "https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=T2M&community=AG&longitude=-3.7038&latitude=40.4168&format=JSON";
-
-    fetch(url)
+  const fetchNasaData = (url, label) => {
+    return fetch(url)
       .then((response) => {
         if (!response.ok) {
-          throw new Error("Error en la respuesta de la NASA POWER API");
+          throw new Error(`Error en ${label}`);
         }
         return response.json();
       })
       .then((data) => {
-        // Los datos vienen en data.properties.parameter.T2M
+        console.log(`${label}:`, data);
+        return data;
+      })
+      .catch((error) => {
+        console.error(`Error en ${label}:`, error);
+      });
+  };
+
+  const handleLocationSelect = (location) => {
+    setSelectedLocation(location);
+    setView("loading");
+
+    // 1. Climatología
+    const urlClimatology =
+      "https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=T2M&community=RE&longitude=-0.4081&latitude=42.1383&format=JSON";
+
+    fetchNasaData(urlClimatology, "Climatología").then((data) => {
+      if (data?.properties?.parameter?.T2M) {
         const temps = data.properties.parameter.T2M;
-        console.log("Climatología de temperatura media (°C) en Madrid:");
+        console.log("🌡️ Climatología de temperatura media (°C):");
         Object.entries(temps).forEach(([mes, valor]) => {
           console.log(`${mes}: ${valor.toFixed(2)} °C`);
         });
-      })
-      .catch((error) => {
-        console.error("Hubo un problema con la API:", error);
-      });
+      }
+    });
 
+    // 2. Diario
+    const urlDaily =
+      "https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M,PRECTOT&community=RE&longitude=-0.4081&latitude=42.1383&start=20200101&end=20200105&format=JSON";
+    fetchNasaData(urlDaily, "Diario");
+
+    // 3. Horario
+    const urlHourly =
+      "https://power.larc.nasa.gov/api/temporal/hourly/point?parameters=T2M,ALLSKY_SFC_SW_DWN&community=RE&longitude=-0.4081&latitude=42.1383&start=20200601&end=20200602&format=JSON";
+    fetchNasaData(urlHourly, "Horario");
+
+    // 👇 quitamos Projections y NCCS porque fallan en client (CORS/404)
+
+    // Cambiar vista al mapa tras 2s
     setTimeout(() => {
       setView("map");
     }, 2000);
@@ -80,13 +102,13 @@ export default function Home() {
       >
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/20 backdrop-blur-sm">
-                  <span className="flex items-center">
-                    <img 
-                      src="/logo.png" 
-                      alt="NotSorry Weather logo" 
-                      className="w-8 h-8"
-                    />
-                  </span>
+            <span className="flex items-center">
+              <img
+                src="/logo.png"
+                alt="NotSorry Weather logo"
+                className="w-8 h-8"
+              />
+            </span>
           </div>
           <div>
             <h1 className="font-mono text-sm font-bold tracking-tight text-foreground">
@@ -128,7 +150,7 @@ export default function Home() {
             onInputActiveChange={setIsInputActive}
           />
 
-          {/* Badges de información */}
+          {/* Badges */}
           <div
             className={`flex flex-wrap items-center justify-center gap-3 pt-4 transition-all duration-500 ${
               isInputActive
@@ -157,3 +179,4 @@ export default function Home() {
     </main>
   );
 }
+
