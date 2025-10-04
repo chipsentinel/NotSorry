@@ -19,7 +19,7 @@ interface PhotonFeature {
 }
 
 interface SearchBarProps {
-  onLocationSelect: (location: {
+  handleLocationSelect: (location: {
     name: string;
     lat: number;
     lon: number;
@@ -29,7 +29,7 @@ interface SearchBarProps {
 }
 
 export function SearchBar({
-  onLocationSelect,
+  handleLocationSelect,
   isInMapView = false,
   onInputActiveChange,
 }: SearchBarProps) {
@@ -97,7 +97,7 @@ export function SearchBar({
     const name = formatLocationName(feature);
     setLocation(name);
     setShowSuggestions(false);
-    onLocationSelect({ name, lat, lon });
+    handleLocationSelect({ name, lat, lon });
 
     // 👇 Quitar focus del input
     inputRef.current?.blur();

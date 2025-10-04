@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Volume2, VolumeX, Power, Square, Mic } from "lucide-react";
 import { useConversation } from "@elevenlabs/react";
 
-export function AIAssistant() {
+export function AIAssistant({ handleLocationSelect, externalContext = null }) {
   const [aiState, setAIState] = useState("initial"); // initial, requesting-permission, listening, speaking, idle, error
   const [isMuted, setIsMuted] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -14,6 +14,154 @@ export function AIAssistant() {
 
   // Configuración del hook de ElevenLabs
   const conversation = useConversation({
+    // Client tools para que la IA controle la búsqueda de ubicaciones
+    clientTools: {
+      // Agregar a tu objeto clientTools existente
+      showAlert: async (parameters) => {
+        try {
+          const { message } = parameters;
+
+          // Mostrar alerta simple de JavaScript
+          alert(message);
+
+          return `Alerta mostrada: ${message}`;
+        } catch (error) {
+          return `Error al mostrar alerta: ${error.message}`;
+        }
+      },
+      // Buscar una ubicación por nombre
+      searchLocation: async (parameters) => {
+        try {
+          const response = await fetch(
+            `https://photon.komoot.io/api/?q=${encodeURIComponent(
+              parameters.query
+            )}&limit=1`
+          );
+          const data = await response.json();
+
+          if (data.features && data.features.length > 0) {
+            const feature = data.features[0];
+            const [lon, lat] = feature.geometry.coordinates;
+            const { name, city, state, country } = feature.properties;
+            const locationName = [name || city, state, country]
+              .filter(Boolean)
+              .join(", ");
+
+            console.log("Ubicación seleccionada:", {
+              name: locationName,
+              lat,
+              lon,
+            });
+            // Llamar al callback para seleccionar la ubicación
+
+            handleLocationSelect({ name: locationName, lat, lon });
+
+            return `Ubicación enviada al buscador : ${locationName} (${lat.toFixed(
+              4
+            )}°, ${lon.toFixed(
+              4
+            )}°). No digas nada aún, espera a que llegue las predicciones.`;
+          } else {
+            return `No se encontró la ubicación: ${parameters.query}`;
+          }
+        } catch (error) {
+          return `Error al buscar ubicación: ${error.message}`;
+        }
+      },
+
+      // Obtener ubicación actual del usuario
+      getCurrentLocation: async () => {
+        try {
+          const position =
+            (await new Promise()) <
+            GeolocationPosition >
+            ((resolve, reject) => {
+              navigator.geolocation.getCurrentPosition(resolve, reject);
+            });
+
+          const { latitude, longitude } = position.coords;
+
+          // Reverse geocoding para obtener el nombre
+          const response = await fetch(
+            `https://photon.komoot.io/reverse?lon=${longitude}&lat=${latitude}`
+          );
+          const data = await response.json();
+
+          if (data.features && data.features.length > 0) {
+            const feature = data.features[0];
+            const { name, city, state, country } = feature.properties;
+            const locationName = [name || city, state, country]
+              .filter(Boolean)
+              .join(", ");
+
+            if (handleLocationSelect) {
+              handleLocationSelect({
+                name: locationName,
+                lat: latitude,
+                lon: longitude,
+              });
+            }
+
+            return `Ubicación actual enviada: ${locationName} (${latitude.toFixed(
+              4
+            )}°, ${longitude.toFixed(
+              4
+            )}°) . No digas nada aún, espera a que llegue las predicciones.`;
+          } else {
+            return `Ubicación actual: ${latitude.toFixed(
+              4
+            )}°, ${longitude.toFixed(4)}°`;
+          }
+        } catch (error) {
+          return `Error al obtener ubicación actual: ${error.message}`;
+        }
+      },
+
+      // Buscar por coordenadas específicas
+      searchByCoordinates: async (parameters) => {
+        try {
+          const { latitude, longitude } = parameters;
+
+          const response = await fetch(
+            `https://photon.komoot.io/reverse?lon=${longitude}&lat=${latitude}`
+          );
+          const data = await response.json();
+
+          if (data.features && data.features.length > 0) {
+            const feature = data.features[0];
+            const { name, city, state, country } = feature.properties;
+            const locationName = [name || city, state, country]
+              .filter(Boolean)
+              .join(", ");
+
+            if (handleLocationSelect) {
+              handleLocationSelect({
+                name: locationName,
+                lat: latitude,
+                lon: longitude,
+              });
+            }
+
+            return `Ubicación encontrada: ${locationName} (${latitude.toFixed(
+              4
+            )}°, ${longitude.toFixed(4)}°)`;
+          } else {
+            if (handleLocationSelect) {
+              handleLocationSelect({
+                name: `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`,
+                lat: latitude,
+                lon: longitude,
+              });
+            }
+            return `Coordenadas establecidas: ${latitude.toFixed(
+              4
+            )}°, ${longitude.toFixed(4)}°`;
+          }
+        } catch (error) {
+          return `Error al buscar por coordenadas: ${error.message}`;
+        }
+      },
+    },
     onConnect: () => {
       console.log("Conectado a ElevenLabs");
       setAIState("idle");
@@ -48,6 +196,43 @@ export function AIAssistant() {
       }
     },
   });
+
+  // If externalContext changes, forward it to the conversation as a system message
+  useEffect(() => {
+    if (!externalContext) return;
+
+    // Normalize to string for logging
+    const ctxString =
+      typeof externalContext === "string"
+        ? externalContext
+        : JSON.stringify(externalContext);
+
+    try {
+      if (
+        conversation &&
+        typeof conversation.sendSystemMessage === "function"
+      ) {
+        // prefer explicit system message API
+        conversation
+          .sendSystemMessage({ message: ctxString })
+          .catch((e) => console.error("sendSystemMessage error:", e));
+      } else if (
+        conversation &&
+        typeof conversation.sendMessage === "function"
+      ) {
+        // fallback to sending a system role message
+        conversation
+          .sendMessage({ role: "system", content: ctxString })
+          .catch((e) => console.error("sendMessage error:", e));
+      } else {
+        // If the conversation API isn't available, just log it; do not update state
+        console.log("External context (no conversation API):", ctxString);
+      }
+    } catch (err) {
+      console.error("Error forwarding externalContext:", err);
+    }
+    // Intentionally do not set component state here to avoid render loops
+  }, [externalContext]);
 
   // Set isClient to true after component mounts
   useEffect(() => {
@@ -160,7 +345,7 @@ export function AIAssistant() {
       // IMPORTANTE: Reemplaza 'YOUR_AGENT_ID' con tu Agent ID real
       // O implementa el flujo de autenticación con signedUrl/conversationToken
       await conversation.startSession({
-        agentId: "agent_5001k6kf4rcjf4zs4vvxh2vb0tsf", // <-- Cambia esto por tu Agent ID
+        agentId: "agent_4801k6q79qz6epbryh4gtwk44fpx", // <-- Cambia esto por tu Agent ID
         connectionType: "webrtc", // o "websocket"
       });
 

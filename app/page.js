@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SearchBar } from "@/components/search-bar";
 import { AnimatedGlobe } from "@/components/animated-globe";
 import { MapView } from "@/components/map-view";
 import { LoadingTransition } from "@/components/loading-transition";
+import { useAI } from "@/components/ai-provider";
 
 export default function Home() {
+  const { sendContext, registerLocationHandler } = useAI();
   const [view, setView] = useState("search");
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [isInputActive, setIsInputActive] = useState(false);
@@ -279,6 +281,26 @@ export default function Home() {
         });
         setRawYearlyData([]);
         setForecastData(null);
+        // Send context to the persistent AI assistant
+        try {
+          sendContext?.({
+            location: { name, lat, lon },
+            date: targetDateStr,
+            mode: "past",
+            singleDayData,
+            prompt: `El ${targetDateStr} en ${name} la temperatura fue de ${
+              singleDayData.temperature !== null
+                ? singleDayData.temperature + "°C"
+                : "dato no disponible"
+            } y la precipitación fue de ${
+              singleDayData.precipitation !== null
+                ? singleDayData.precipitation + "mm"
+                : "dato no disponible"
+            }. Si el usuario te ha dicho que busques sobre esta ubicación debes hablarle sobre estas estadísticas.`,
+          });
+        } catch (e) {
+          console.warn("No se pudo enviar contexto al asistente:", e);
+        }
       } else if (dateInfo.type === "forecast") {
         // Fecha dentro de los próximos 16 días: pronóstico de OpenMeteo
         console.log("Obteniendo pronóstico meteorológico...");
@@ -312,6 +334,17 @@ export default function Home() {
 
         setForecastData(forecast);
         setRawYearlyData([]);
+        try {
+          sendContext?.({
+            location: { name, lat, lon },
+            date: targetDateStr,
+            mode: "forecast",
+            forecast,
+            targetDayForecast,
+          });
+        } catch (e) {
+          console.warn("No se pudo enviar contexto al asistente:", e);
+        }
       } else {
         // Fecha futura (más de 16 días): datos históricos del mismo día
         console.log(
@@ -327,6 +360,17 @@ export default function Home() {
         setClimateStatistics(statistics);
         setRawYearlyData(allYearsData);
         setForecastData(null);
+        try {
+          sendContext?.({
+            location: { name, lat, lon },
+            date: targetDateStr,
+            mode: "future",
+            statistics,
+            allYearsData,
+          });
+        } catch (e) {
+          console.warn("No se pudo enviar contexto al asistente:", e);
+        }
       }
 
       setView("map");
@@ -350,22 +394,34 @@ export default function Home() {
     setSelectedLocation(location);
   };
 
+  useEffect(() => {
+    // register the handler with the provider so the AI assistant can call it
+    registerLocationHandler?.(handleLocationSelect);
+    return () => registerLocationHandler?.(null);
+  }, [registerLocationHandler]);
+
   if (view === "loading") {
-    return <LoadingTransition locationName={selectedLocation?.name || ""} />;
+    return (
+      <>
+        <LoadingTransition locationName={selectedLocation?.name || ""} />
+      </>
+    );
   }
 
   if (view === "map" && selectedLocation) {
     return (
-      <MapView
-        location={selectedLocation}
-        onBack={handleBackToSearch}
-        onLocationUpdate={handleLocationSelect}
-        temperatureStats={climateStatistics?.temperature}
-        precipitationStats={climateStatistics?.precipitation}
-        historicalData={rawYearlyData || []}
-        forecastData={forecastData}
-        selectedDate={currentDate}
-      />
+      <>
+        <MapView
+          location={selectedLocation}
+          onBack={handleBackToSearch}
+          onLocationUpdate={handleLocationSelect}
+          temperatureStats={climateStatistics?.temperature}
+          precipitationStats={climateStatistics?.precipitation}
+          historicalData={rawYearlyData || []}
+          forecastData={forecastData}
+          selectedDate={currentDate}
+        />
+      </>
     );
   }
 
@@ -423,7 +479,7 @@ export default function Home() {
           </div>
 
           <SearchBar
-            onLocationSelect={handleLocationSelect}
+            handleLocationSelect={handleLocationSelect}
             onInputActiveChange={setIsInputActive}
           />
 
@@ -452,6 +508,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      {/* AIAssistant is mounted once at the app level via AIAssistantProvider */}
     </main>
   );
 }

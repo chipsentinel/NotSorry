@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   ArrowLeft,
   Cloud,
@@ -9,11 +10,11 @@ import {
   CloudSnow,
   Sun,
   CloudDrizzle,
+  MapIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search-bar";
 import { WeatherDataDisplay } from "@/components/weather-data-display";
-import { HistoricalYearsDisplay } from "@/components/historical-years-display";
 
 interface MapViewProps {
   location: {
@@ -62,18 +63,32 @@ interface MapViewProps {
   }>;
   isLoadingWeatherData?: boolean;
   selectedDate?: string;
+  conversation?: any;
 }
+
+// Dynamically import the MapComponent with SSR disabled
+const MapComponent = dynamic(() => import("./map-component"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full w-full items-center justify-center bg-slate-900">
+      <div className="text-center">
+        <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-400 border-r-transparent"></div>
+        <p className="font-mono text-sm text-blue-300">Loading map...</p>
+      </div>
+    </div>
+  ),
+});
 
 // Mapeo de códigos de clima de OpenMeteo a iconos
 const getWeatherIcon = (code: number) => {
-  if (code === 0) return Sun; // Cielo despejado
-  if (code <= 3) return Cloud; // Parcialmente nublado
-  if (code <= 48) return Cloud; // Niebla
-  if (code <= 57) return CloudDrizzle; // Llovizna
-  if (code <= 67) return CloudRain; // Lluvia
-  if (code <= 77) return CloudSnow; // Nieve
-  if (code <= 82) return CloudRain; // Chubascos
-  if (code <= 86) return CloudSnow; // Chubascos de nieve
+  if (code === 0) return Sun;
+  if (code <= 3) return Cloud;
+  if (code <= 48) return Cloud;
+  if (code <= 57) return CloudDrizzle;
+  if (code <= 67) return CloudRain;
+  if (code <= 77) return CloudSnow;
+  if (code <= 82) return CloudRain;
+  if (code <= 86) return CloudSnow;
   return Cloud;
 };
 
@@ -104,16 +119,22 @@ export function MapView({
   forecastData = null,
   isLoadingWeatherData = false,
   selectedDate,
+  conversation,
 }: MapViewProps) {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<any>(null);
-  const marker = useRef<any>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [scriptLoaded, setScriptLoaded] = useState(false);
-  const initialLocation = useRef(location);
   const [currentSelectedDate, setCurrentSelectedDate] = useState(
     selectedDate || new Date().toISOString().split("T")[0]
   );
+
+  const [mapCenter, setMapCenter] = useState<[number, number]>([
+    location.lat,
+    location.lon,
+  ]);
+
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Determinar el tipo de vista según la fecha
   const determineDateType = (targetDateStr: string) => {
@@ -123,10 +144,7 @@ export function MapView({
     const targetDate = new Date(targetDateStr);
     targetDate.setHours(0, 0, 0, 0);
 
-    const maxForecastDate = new Date(today);
-    maxForecastDate.setDate(maxForecastDate.getDate() + 16);
-
-    const diffTime = targetDate - today;
+    const diffTime = targetDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays < 0) {
@@ -225,87 +243,12 @@ export function MapView({
     URL.revokeObjectURL(url);
   };
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    if ((window as any).L) {
-      setScriptLoaded(true);
-      return;
-    }
-
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-    document.head.appendChild(link);
-
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-    script.async = true;
-    script.onload = () => {
-      setScriptLoaded(true);
-    };
-    document.head.appendChild(script);
-
-    return () => {
-      document.head.removeChild(link);
-      document.head.removeChild(script);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!scriptLoaded || !mapContainer.current || map.current) return;
-
-    const L = (window as any).L;
-
-    const mapInstance = L.map(mapContainer.current, {
-      center: [initialLocation.current.lat, initialLocation.current.lon],
-      zoom: 15,
-      zoomControl: false,
-      attributionControl: false,
-    });
-
-    L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-      { maxZoom: 19, subdomains: "abcd" }
-    ).addTo(mapInstance);
-
-    const customIcon = L.divIcon({
-      className: "custom-leaflet-marker",
-      html: `<div class="marker-pin"><div class="marker-pulse"></div><div class="marker-dot"></div></div>`,
-      iconSize: [40, 40],
-      iconAnchor: [20, 20],
-    });
-
-    marker.current = L.marker(
-      [initialLocation.current.lat, initialLocation.current.lon],
-      { icon: customIcon }
-    ).addTo(mapInstance);
-
-    map.current = mapInstance;
-    setMapLoaded(true);
-
-    // ⚠️ NO hacemos cleanup que destruya el mapa salvo en unmount real
-    return () => {
-      mapInstance.off();
-      mapInstance.remove();
-      if (mapContainer.current) {
-        mapContainer.current.innerHTML = ""; // limpiar DOM residual de Leaflet
-      }
-    };
-  }, [scriptLoaded]);
-
   const handleLocationUpdateInternal = (newLocation: {
     name: string;
     lat: number;
     lon: number;
   }) => {
-    if (map.current && marker.current) {
-      map.current.flyTo([newLocation.lat, newLocation.lon], 15, {
-        duration: 2,
-        easeLinearity: 0.25,
-      });
-      marker.current.setLatLng([newLocation.lat, newLocation.lon]);
-    }
+    setMapCenter([newLocation.lat, newLocation.lon]);
     onLocationUpdate(newLocation, currentSelectedDate);
   };
 
@@ -314,30 +257,135 @@ export function MapView({
     onLocationUpdate(location, newDate);
   };
 
+  useEffect(() => {
+    setMapCenter([location.lat, location.lon]);
+  }, [location.lat, location.lon]);
+
   return (
     <div className="relative flex h-screen w-full overflow-hidden bg-background">
+      <style jsx global>{`
+        .custom-map-marker {
+          background: transparent;
+          border: none;
+        }
+
+        .marker-container {
+          position: relative;
+          width: 40px;
+          height: 40px;
+        }
+
+        .marker-pulse {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 40px;
+          height: 40px;
+          background: rgba(59, 130, 246, 0.4);
+          border-radius: 50%;
+          animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+          0%,
+          100% {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+          }
+          50% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(1.5);
+          }
+        }
+
+        .marker-pin {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 24px;
+          height: 24px;
+          background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+          border-radius: 50%;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6),
+            0 0 0 4px rgba(59, 130, 246, 0.2);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .marker-inner {
+          width: 10px;
+          height: 10px;
+          background: white;
+          border-radius: 50%;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .leaflet-container {
+          background: #0f172a;
+          font-family: "Inter", sans-serif;
+        }
+
+        .leaflet-control-attribution {
+          display: none !important;
+        }
+
+        .leaflet-control-zoom {
+          border: 1px solid rgba(59, 130, 246, 0.3) !important;
+          border-radius: 8px !important;
+          overflow: hidden;
+          background: rgba(15, 23, 42, 0.8) !important;
+          backdrop-filter: blur(12px);
+        }
+
+        .leaflet-control-zoom a {
+          background: rgba(30, 41, 59, 0.9) !important;
+          border-bottom: 1px solid rgba(59, 130, 246, 0.2) !important;
+          color: rgb(191, 219, 254) !important;
+          font-size: 20px !important;
+          font-weight: bold !important;
+          transition: all 0.2s ease !important;
+        }
+
+        .leaflet-control-zoom a:hover {
+          background: rgba(59, 130, 246, 0.3) !important;
+          color: white !important;
+        }
+
+        .leaflet-control-zoom a:last-child {
+          border-bottom: none !important;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(30, 41, 59, 0.5);
+          border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(59, 130, 246, 0.5);
+          border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(59, 130, 246, 0.7);
+        }
+      `}</style>
+
       <div className="absolute inset-0 z-0">
-        <div
-          ref={mapContainer}
-          className="h-full w-full leaflet-map-container"
-        />
+        {isMounted && <MapComponent center={mapCenter} />}
 
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-blue-500/10 via-transparent to-blue-600/15" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.15),transparent_50%)]" />
 
-        {(!scriptLoaded || !mapLoaded) && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background">
-            <div className="text-center">
-              <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-accent/20 border-t-accent" />
-              <p className="font-mono text-sm text-muted-foreground">
-                {!scriptLoaded ? "Loading map..." : "Initializing..."}
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Bottom panel - Forecast o Historical Data */}
-        <div className="pointer-events-auto absolute bottom-4 left-0 right-0 z-10 px-4 md:left-96 md:px-8">
+        <div className="pointer-events-auto absolute bottom-4 left-0 right-0 z-99990 px-4 md:left-96 md:px-8">
           {dateType === "forecast" &&
             forecastData &&
             forecastData.length > 0 && (
@@ -355,7 +403,7 @@ export function MapView({
                         return (
                           <div
                             key={day.date}
-                            className={`flex min-w-[90px] flex-col items-center gap-2 rounded-lg border p-3 backdrop-blur-sm transition-all hover:scale-105 animate-in slide-in-from-bottom duration-300 ${
+                            className={`flex min-w-[90px] flex-col items-center gap-2 rounded-lg border p-3 backdrop-blur-sm transition-all animate-in slide-in-from-bottom duration-300 ${
                               isSelectedDay
                                 ? "border-blue-400 bg-blue-900/60 hover:bg-blue-900/70"
                                 : "border-blue-500/20 bg-blue-950/40 hover:border-blue-400/40 hover:bg-blue-900/50"
@@ -448,7 +496,7 @@ export function MapView({
               variant="ghost"
               size="sm"
               onClick={onBack}
-              className="-ml-2 text-blue-200 hover:text-blue-100 transition-all hover:translate-x-[-4px]"
+              className="-ml-2 text-blue-200 hover:text-blue-700 transition-all hover:translate-x-[-4px]"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to search
