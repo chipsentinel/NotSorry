@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Suspense } from "react";
-import { AIAssistant } from "@/components/ai-assistant";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,7 +18,6 @@ export default function RootLayout({ children }) {
         className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}
       >
         <Suspense fallback={null}>{children}</Suspense>
-        <AIAssistant />
       </body>
     </html>
   );
