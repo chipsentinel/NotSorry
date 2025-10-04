@@ -61,7 +61,7 @@ export default function Home() {
       <MapView
         location={selectedLocation}
         onBack={handleBackToSearch}
-        onLocationUpdate={handleLocationUpdate}
+        onLocationUpdate={handleLocationSelect}
       />
     );
   }

@@ -241,7 +241,7 @@ export function MapView({ location, onBack, onLocationUpdate }: MapViewProps) {
 
             <div className="pt-2">
 <SearchBar
-  onLocationSelect={onLocationUpdate} // ya apunta a handleLocationSelect de Home
+  onLocationSelect={onLocationUpdate} // cambiar a handleLocationSelect en Home
   isInMapView={true}
 />
             </div>
