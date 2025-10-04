@@ -181,7 +181,7 @@ export function MapView({ location, onBack, onLocationUpdate }: MapViewProps) {
                   return (
                     <div
                       key={index}
-                      className="flex min-w-[90px] flex-col items-center gap-2 rounded-lg border border-blue-500/20 bg-blue-950/40 p-3 backdrop-blur-sm transition-all hover:scale-105 hover:border-blue-400/40 hover:bg-blue-900/50"
+                      className="flex min-w-[90px] flex-col items-center gap-2 rounded-lg border border-blue-500/20 bg-blue-950/40 p-3 backdrop-blur-sm transition-all hover:border-blue-400/40 hover:bg-blue-900/50"
                     >
                       <span className="font-mono text-xs font-semibold text-blue-200">
                         {day.day}
@@ -221,13 +221,13 @@ export function MapView({ location, onBack, onLocationUpdate }: MapViewProps) {
 
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/20 border border-blue-400/30">
-                  <span className="flex items-center">
-                    <img 
-                      src="/logo.png" 
-                      alt="NotSorry Weather logo" 
-                      className="w-8 h-8"
-                    />
-                  </span>
+                <span className="flex items-center">
+                  <img
+                    src="/logo.png"
+                    alt="NotSorry Weather logo"
+                    className="w-10 h-10"
+                  />
+                </span>
               </div>
               <div>
                 <h1 className="font-mono text-sm font-bold tracking-tight text-blue-100">
