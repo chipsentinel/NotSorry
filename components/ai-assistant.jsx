@@ -56,9 +56,10 @@ export function AIAssistant({ handleLocationSelect, externalContext = null }) {
       },
       searchLocation: async (parameters) => {
         try {
+          const { query, date } = parameters || {};
           const response = await fetch(
             `https://photon.komoot.io/api/?q=${encodeURIComponent(
-              parameters.query
+              query
             )}&limit=1`
           );
           const data = await response.json();
@@ -71,22 +72,63 @@ export function AIAssistant({ handleLocationSelect, externalContext = null }) {
               .filter(Boolean)
               .join(", ");
 
-            handleLocationSelect({ name: locationName, lat, lon });
+            // Si se pasa una fecha opcional, pasarla al handler para que calcule y devuelva resultados
+            if (date) {
+              try {
+                const result = await handleLocationSelect(
+                  { name: locationName, lat, lon },
+                  date
+                );
+                // Devolver objeto estructurado para que la IA lo entienda directamente
+                return {
+                  success: !!(result && result.success),
+                  mode: result?.mode || null,
+                  location: { name: locationName, lat, lon },
+                  date,
+                  payload: result?.data || null,
+                  raw: result || null,
+                  summary:
+                    result && result.success
+                      ? `Resultados calculados para ${locationName} en ${date} (modo: ${result.mode}).`
+                      : `No se pudieron obtener los datos para ${locationName} en ${date}.`,
+                };
+              } catch (e) {
+                return { success: false, error: e.message || "Error" };
+              }
+            }
 
-            return `Ubicación enviada al buscador : ${locationName} (${lat.toFixed(
-              4
-            )}°, ${lon.toFixed(
-              4
-            )}°). No digas nada aún, espera a que llegue las predicciones.`;
+            // Si no hay fecha, solo enviar la ubicación al buscador y devolver info simple
+            const res = await handleLocationSelect({
+              name: locationName,
+              lat,
+              lon,
+            });
+            return {
+              success: true,
+              mode: res?.mode || "unknown",
+              location: { name: locationName, lat, lon },
+              date: res?.date || null,
+              payload: res?.data || null,
+              summary: `Ubicación enviada: ${locationName} (${lat.toFixed(
+                4
+              )}°, ${lon.toFixed(4)}°)`,
+            };
           } else {
-            return `No se encontró la ubicación: ${parameters.query}`;
+            return {
+              success: false,
+              error: `No se encontró la ubicación: ${query}`,
+            };
           }
         } catch (error) {
-          return `Error al buscar ubicación: ${error.message}`;
+          return {
+            success: false,
+            error: `Error al buscar ubicación: ${error.message}`,
+          };
         }
       },
-      getCurrentLocation: async () => {
+      getCurrentLocation: async (parameters) => {
         try {
+          const { date } = parameters || {};
           const position = await new Promise((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject);
           });
@@ -105,31 +147,77 @@ export function AIAssistant({ handleLocationSelect, externalContext = null }) {
               .filter(Boolean)
               .join(", ");
 
-            if (handleLocationSelect) {
-              handleLocationSelect({
+            if (date) {
+              // Llamar al handler con la fecha para obtener cálculos inmediatos
+              try {
+                const result = await handleLocationSelect(
+                  { name: locationName, lat: latitude, lon: longitude },
+                  date
+                );
+                return {
+                  success: !!(result && result.success),
+                  mode: result?.mode || null,
+                  location: {
+                    name: locationName,
+                    lat: latitude,
+                    lon: longitude,
+                  },
+                  date,
+                  payload: result?.data || null,
+                  raw: result || null,
+                  summary:
+                    result && result.success
+                      ? `Ubicación actual enviada: ${locationName} (${latitude.toFixed(
+                          4
+                        )}°, ${longitude.toFixed(
+                          4
+                        )}°) y calculados los datos para ${date} (modo: ${
+                          result.mode
+                        }).`
+                      : `Ubicación actual enviada: ${locationName} (${latitude.toFixed(
+                          4
+                        )}°, ${longitude.toFixed(
+                          4
+                        )}°). No se pudo obtener cálculos para ${date}.`,
+                };
+              } catch (e) {
+                return { success: false, error: e.message || "Error" };
+              }
+            } else {
+              const res = await handleLocationSelect({
                 name: locationName,
                 lat: latitude,
                 lon: longitude,
               });
+              return {
+                success: true,
+                mode: res?.mode || "unknown",
+                location: { name: locationName, lat: latitude, lon: longitude },
+                date: res?.date || null,
+                payload: res?.data || null,
+                summary: `Ubicación actual enviada: ${locationName} (${latitude.toFixed(
+                  4
+                )}°, ${longitude.toFixed(4)}°)`,
+              };
             }
-
-            return `Ubicación actual enviada: ${locationName} (${latitude.toFixed(
-              4
-            )}°, ${longitude.toFixed(
-              4
-            )}°) . No digas nada aún, espera a que llegue las predicciones.`;
           } else {
-            return `Ubicación actual: ${latitude.toFixed(
-              4
-            )}°, ${longitude.toFixed(4)}°`;
+            return {
+              success: false,
+              error: `Ubicación actual: ${latitude.toFixed(
+                4
+              )}°, ${longitude.toFixed(4)}°`,
+            };
           }
         } catch (error) {
-          return `Error al obtener ubicación actual: ${error.message}`;
+          return {
+            success: false,
+            error: `Error al obtener ubicación actual: ${error.message}`,
+          };
         }
       },
       searchByCoordinates: async (parameters) => {
         try {
-          const { latitude, longitude } = parameters;
+          const { latitude, longitude, date } = parameters || {};
 
           const response = await fetch(
             `https://photon.komoot.io/reverse?lon=${longitude}&lat=${latitude}`
@@ -143,31 +231,84 @@ export function AIAssistant({ handleLocationSelect, externalContext = null }) {
               .filter(Boolean)
               .join(", ");
 
-            if (handleLocationSelect) {
-              handleLocationSelect({
+            if (date) {
+              try {
+                const result = await handleLocationSelect(
+                  { name: locationName, lat: latitude, lon: longitude },
+                  date
+                );
+                return {
+                  success: !!(result && result.success),
+                  mode: result?.mode || null,
+                  location: {
+                    name: locationName,
+                    lat: latitude,
+                    lon: longitude,
+                  },
+                  date,
+                  payload: result?.data || null,
+                  raw: result || null,
+                  summary:
+                    result && result.success
+                      ? `Ubicación encontrada: ${locationName} (${latitude.toFixed(
+                          4
+                        )}°, ${longitude.toFixed(
+                          4
+                        )}°). Datos calculados (modo: ${result.mode}).`
+                      : `Ubicación encontrada: ${locationName} (${latitude.toFixed(
+                          4
+                        )}°, ${longitude.toFixed(
+                          4
+                        )}°). No se pudieron calcular datos para ${date}.`,
+                };
+              } catch (e) {
+                return { success: false, error: e.message || "Error" };
+              }
+            } else {
+              const res = await handleLocationSelect({
                 name: locationName,
                 lat: latitude,
                 lon: longitude,
               });
+              return {
+                success: true,
+                mode: res?.mode || "unknown",
+                location: { name: locationName, lat: latitude, lon: longitude },
+                date: res?.date || null,
+                payload: res?.data || null,
+                summary: `Ubicación encontrada: ${locationName} (${latitude.toFixed(
+                  4
+                )}°, ${longitude.toFixed(4)}°).`,
+              };
             }
-
-            return `Ubicación encontrada: ${locationName} (${latitude.toFixed(
-              4
-            )}°, ${longitude.toFixed(4)}°)`;
           } else {
-            if (handleLocationSelect) {
-              handleLocationSelect({
-                name: `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`,
+            const res = await handleLocationSelect({
+              name: `${latitude.toFixed(4)}°, ${longitude.toFixed(4)}°`,
+              lat: latitude,
+              lon: longitude,
+            });
+            return {
+              success: true,
+              mode: res?.mode || "unknown",
+              location: {
+                name:
+                  res?.location?.name ||
+                  `${latitude.toFixed(4)},${longitude.toFixed(4)}`,
                 lat: latitude,
                 lon: longitude,
-              });
-            }
-            return `Coordenadas establecidas: ${latitude.toFixed(
-              4
-            )}°, ${longitude.toFixed(4)}°`;
+              },
+              date: res?.date || null,
+              payload: res?.data || null,
+              summary: `Coordenadas establecidas: ${latitude.toFixed(
+                4
+              )}°, ${longitude.toFixed(4)}°`,
+            };
           }
         } catch (error) {
-          return `Error al buscar por coordenadas: ${error.message}`;
+          return {
+            success: false,
+            error: `Error al buscar por coordenadas: ${error.message}`,
+          };
         }
       },
     },
@@ -312,7 +453,7 @@ export function AIAssistant({ handleLocationSelect, externalContext = null }) {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       await conversation.startSession({
-        agentId: "agent_6601k6qbkhh3fevvqvwqj1d5txky",
+        agentId: "agent_2201k6tsr144egrbnaz1td85yrxk",
         connectionType: "webrtc",
       });
       setAIState("idle");
@@ -398,7 +539,7 @@ export function AIAssistant({ handleLocationSelect, externalContext = null }) {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       await conversation.startSession({
-        agentId: "agent_6601k6qbkhh3fevvqvwqj1d5txky",
+        agentId: "agent_2201k6tsr144egrbnaz1td85yrxk",
         connectionType: "webrtc",
       });
       setAIState("idle");
@@ -574,7 +715,7 @@ export function AIAssistant({ handleLocationSelect, externalContext = null }) {
                       className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm text-green-200 transition-colors hover:bg-green-500/20 hover:text-green-100 border border-green-500/30"
                     >
                       <Power className="h-4 w-4" />
-                      <span className="font-mono text-xs">Activar</span>
+                      <span className="font-mono text-xs">Activate</span>
                     </button>
                   ) : aiState === "error" ? (
                     <button
@@ -582,7 +723,7 @@ export function AIAssistant({ handleLocationSelect, externalContext = null }) {
                       className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm text-orange-200 transition-colors hover:bg-orange-500/20 hover:text-orange-100 border border-orange-500/30"
                     >
                       <Mic className="h-4 w-4" />
-                      <span className="font-mono text-xs">Reintentar</span>
+                      <span className="font-mono text-xs">Retry</span>
                     </button>
                   ) : aiState === "requesting-permission" ? (
                     <button
@@ -598,7 +739,7 @@ export function AIAssistant({ handleLocationSelect, externalContext = null }) {
                       className="flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm text-red-200 transition-colors hover:bg-red-500/20 hover:text-red-100 border border-red-500/30"
                     >
                       <Square className="h-4 w-4" />
-                      <span className="font-mono text-xs">Detener</span>
+                      <span className="font-mono text-xs">Stop</span>
                     </button>
                   )}
 

@@ -255,7 +255,7 @@ export default function Home() {
         console.log("Obteniendo datos históricos para un día específico...");
         const singleDayData = await fetchSingleDayData(lat, lon, targetDateStr);
 
-        setClimateStatistics({
+        const stats = {
           temperature:
             singleDayData.temperature !== null
               ? {
@@ -278,10 +278,13 @@ export default function Home() {
                   count: 1,
                 }
               : null,
-        });
+        };
+
+        setClimateStatistics(stats);
         setRawYearlyData([]);
         setForecastData(null);
-        // Send context to the persistent AI assistant
+
+        // (Opcional) seguir enviando contexto para UI, pero la IA recibirá el resultado directo
         try {
           sendContext?.(
             `El usuario seleccionó ${name} (${lat}, ${lon}) para la fecha ${targetDateStr}. Datos del día: Temperatura ${singleDayData.temperature}°C, Precipitación ${singleDayData.precipitation}mm.`
@@ -289,6 +292,16 @@ export default function Home() {
         } catch (e) {
           console.warn("No se pudo enviar contexto al asistente:", e);
         }
+
+        setView("map");
+
+        return {
+          success: true,
+          mode: "past",
+          location: { name, lat, lon },
+          date: targetDateStr,
+          data: { singleDayData, statistics: stats },
+        };
       } else if (dateInfo.type === "forecast") {
         // Fecha dentro de los próximos 16 días: pronóstico de OpenMeteo
         console.log("Obteniendo pronóstico meteorológico...");
@@ -318,10 +331,13 @@ export default function Home() {
               count: 1,
             },
           });
+        } else {
+          setClimateStatistics(null);
         }
 
         setForecastData(forecast);
         setRawYearlyData([]);
+
         try {
           sendContext?.({
             location: { name, lat, lon },
@@ -333,6 +349,16 @@ export default function Home() {
         } catch (e) {
           console.warn("No se pudo enviar contexto al asistente:", e);
         }
+
+        setView("map");
+
+        return {
+          success: true,
+          mode: "forecast",
+          location: { name, lat, lon },
+          date: targetDateStr,
+          data: { forecast, targetDayForecast },
+        };
       } else {
         // Fecha futura (más de 16 días): datos históricos del mismo día
         console.log(
@@ -348,6 +374,7 @@ export default function Home() {
         setClimateStatistics(statistics);
         setRawYearlyData(allYearsData);
         setForecastData(null);
+
         try {
           sendContext?.({
             location: { name, lat, lon },
@@ -359,13 +386,21 @@ export default function Home() {
         } catch (e) {
           console.warn("No se pudo enviar contexto al asistente:", e);
         }
-      }
 
-      setView("map");
+        setView("map");
+
+        return {
+          success: true,
+          mode: "future",
+          location: { name, lat, lon },
+          date: targetDateStr,
+          data: { statistics, allYearsData },
+        };
+      }
     } catch (error) {
       console.error("Error al obtener datos climáticos:", error);
       setView("error");
-      throw error;
+      return { success: false, error: error.message || "Error desconocido" };
     }
   };
 
