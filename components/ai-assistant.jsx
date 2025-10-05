@@ -453,7 +453,7 @@ export function AIAssistant({ handleLocationSelect, externalContext = null }) {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       await conversation.startSession({
-        agentId: "agent_2201k6tsr144egrbnaz1td85yrxk",
+        agentId: process.env.NEXT_PUBLIC_AGENT_ID,
         connectionType: "webrtc",
       });
       setAIState("idle");
@@ -539,7 +539,7 @@ export function AIAssistant({ handleLocationSelect, externalContext = null }) {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       await conversation.startSession({
-        agentId: "agent_2201k6tsr144egrbnaz1td85yrxk",
+        agentId: process.env.NEXT_PUBLIC_AGENT_ID,
         connectionType: "webrtc",
       });
       setAIState("idle");
