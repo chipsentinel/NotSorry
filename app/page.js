@@ -284,15 +284,6 @@ export default function Home() {
         setRawYearlyData([]);
         setForecastData(null);
 
-        // (Opcional) seguir enviando contexto para UI, pero la IA recibirá el resultado directo
-        try {
-          sendContext?.(
-            `El usuario seleccionó ${name} (${lat}, ${lon}) para la fecha ${targetDateStr}. Datos del día: Temperatura ${singleDayData.temperature}°C, Precipitación ${singleDayData.precipitation}mm.`
-          );
-        } catch (e) {
-          console.warn("No se pudo enviar contexto al asistente:", e);
-        }
-
         setView("map");
 
         return {
@@ -338,18 +329,6 @@ export default function Home() {
         setForecastData(forecast);
         setRawYearlyData([]);
 
-        try {
-          sendContext?.({
-            location: { name, lat, lon },
-            date: targetDateStr,
-            mode: "forecast",
-            forecast,
-            targetDayForecast,
-          });
-        } catch (e) {
-          console.warn("No se pudo enviar contexto al asistente:", e);
-        }
-
         setView("map");
 
         return {
@@ -374,18 +353,6 @@ export default function Home() {
         setClimateStatistics(statistics);
         setRawYearlyData(allYearsData);
         setForecastData(null);
-
-        try {
-          sendContext?.({
-            location: { name, lat, lon },
-            date: targetDateStr,
-            mode: "future",
-            statistics,
-            allYearsData,
-          });
-        } catch (e) {
-          console.warn("No se pudo enviar contexto al asistente:", e);
-        }
 
         setView("map");
 

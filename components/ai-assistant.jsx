@@ -454,6 +454,9 @@ export function AIAssistant({ handleLocationSelect, externalContext = null }) {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       await conversation.startSession({
         agentId: process.env.NEXT_PUBLIC_AGENT_ID,
+        dynamicVariables: {
+          date: new Date().toLocaleString(),
+        },
         connectionType: "webrtc",
       });
       setAIState("idle");
@@ -540,6 +543,9 @@ export function AIAssistant({ handleLocationSelect, externalContext = null }) {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       await conversation.startSession({
         agentId: process.env.NEXT_PUBLIC_AGENT_ID,
+        dynamicVariables: {
+          date: new Date().toLocaleString(),
+        },
         connectionType: "webrtc",
       });
       setAIState("idle");
